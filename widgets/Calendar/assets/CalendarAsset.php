@@ -1,0 +1,48 @@
+<?php
+
+namespace app\widgets\Calendar\assets;
+
+use yii\web\AssetBundle;
+use yii\web\JqueryAsset;
+
+/**
+ * Class CalendarAsset
+ * @package app\widgets\Calendar\assets
+ */
+class CalendarAsset extends AssetBundle
+{
+    /**
+     * @var string
+     */
+    public $sourcePath = '@app/widgets/Calendar/web/';
+
+    /**
+     * @var string[]
+     */
+    public $css = [
+        'css/fullcalendar/fullcalendar.css',
+    ];
+
+    /**
+     * @var string[]
+     */
+    public $js = [
+        'js/moment/moment.js',
+        'js/moment/ru.js',
+        'js/fullcalendar/fullcalendar.js',
+        'js/fullcalendar/ru.js',
+        'js/calendar.js',
+    ];
+
+    /**
+     * @var string[]
+     */
+    public $depends = [
+        JqueryAsset::class,
+    ];
+
+    public function __construct($config = [])
+    {
+        parent::__construct($config);
+    }
+}
