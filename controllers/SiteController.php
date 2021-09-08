@@ -2,13 +2,23 @@
 
 namespace app\controllers;
 
+use app\components\entity\Exams;
+use app\components\entity\Schedule;
+use app\components\entity\ScheduleTypes;
+use app\components\exceptions\ScheduleExceptions;
+use app\components\operations\SchedulerOperation;
+use app\models\ExamScheduleModel;
+use Exception;
+use Throwable;
 use Yii;
+use yii\data\ActiveDataProvider;
+use yii\data\ArrayDataProvider;
 use yii\filters\AccessControl;
+use yii\grid\DataColumn;
+use yii\helpers\ArrayHelper;
 use yii\web\Controller;
-use yii\web\Response;
 use yii\filters\VerbFilter;
-use app\models\LoginForm;
-use app\models\ContactForm;
+use yii\web\Response;
 
 class SiteController extends Controller
 {
@@ -47,82 +57,145 @@ class SiteController extends Controller
             'error' => [
                 'class' => 'yii\web\ErrorAction',
             ],
-            'captcha' => [
-                'class' => 'yii\captcha\CaptchaAction',
-                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
-            ],
         ];
     }
 
     /**
-     * Displays homepage.
-     *
+     * Страница добавления экзамена в расписание
      * @return string
+     * @throws Throwable
      */
     public function actionIndex()
     {
-        return $this->render('index');
-    }
-
-    /**
-     * Login action.
-     *
-     * @return Response|string
-     */
-    public function actionLogin()
-    {
-        if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
-        }
-
-        $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
-        }
-
-        $model->password = '';
-        return $this->render('login', [
-            'model' => $model,
+        $title = 'Главная страница';
+        $query = Exams::find()->with(['schedule']);
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
+            'pagination' => [
+                'pageSize' => 5,
+            ],
+        ]);
+        return $this->render('index', [
+            'title' => $title,
+            'dataProvider' => $dataProvider
         ]);
     }
 
     /**
-     * Logout action.
-     *
-     * @return Response
+     * Формирование страницы "Планировщик"
+     * @throws Throwable
      */
-    public function actionLogout()
+    public function actionScheduler()
     {
-        Yii::$app->user->logout();
+        $examScheduleModel = new ExamScheduleModel();
+        $title = 'Расписание для экзаменов';
+        $errorMessage = '';
 
-        return $this->goHome();
-    }
-
-    /**
-     * Displays contact page.
-     *
-     * @return Response|string
-     */
-    public function actionContact()
-    {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
-            Yii::$app->session->setFlash('contactFormSubmitted');
-
-            return $this->refresh();
+        if ($examScheduleModel->load(Yii::$app->request->post()) && $examScheduleModel->validate()) {
+            try {
+                $examScheduleModel->saveExamsWithSchedule();
+                Yii::$app->session->setFlash('success', 'Запись сохранена');
+                return $this->refresh();
+            } catch (ScheduleExceptions $ex) {
+                $errorMessage = $ex->getMessage();
+            } catch (Exception $ex) {
+                $errorMessage = 'fatal error';
+            }
         }
-        return $this->render('contact', [
-            'model' => $model,
+
+        return $this->render('scheduler', [
+            'title' => $title,
+            'examScheduleModel' => $examScheduleModel,
+            'errorMessage' => $errorMessage,
         ]);
     }
 
     /**
-     * Displays about page.
-     *
+     * Формирование страницы "Календарь"
      * @return string
      */
-    public function actionAbout()
+    public function actionSchedule()
     {
-        return $this->render('about');
+        $title = 'Расписание';
+
+        $examsScheduleEntity = Schedule::find()->all();
+        $examsSchedule = ArrayHelper::map($examsScheduleEntity, function (Schedule $schedule) {
+            return date('Y-m-d', strtotime($schedule->date));
+        }, function (Schedule $schedule) {
+            return ['examName' => $schedule->exam->name, 'educationDaysCount' => $schedule->exam->days];
+        });
+        return $this->render('schedule', [
+            'title' => $title,
+            'examsSchedule' => $examsSchedule,
+        ]);
+    }
+
+    /**
+     * Возвращает расписание в соответствии с его типом
+     * @return string
+     */
+    public function actionGetScheduleExamsByType()
+    {
+        if ($post = Yii::$app->request->post()) {
+            $types = [];
+            if (json_decode($post['exams'])) {
+                $types[] = ScheduleTypes::TYPE_EXAM;
+            }
+            if (json_decode($post['preparing'])) {
+                $types[] = ScheduleTypes::TYPE_PREPARING;
+            }
+            $schedules = Schedule::find()->with(['exam', 'type'])->where(['type_id' => $types])->all();
+            $schedule = ArrayHelper::map($schedules, function (Schedule $schedule) {
+                return date('Y-m-d', strtotime($schedule->date));
+            }, function (Schedule $schedule) {
+                return [
+                    'examName' => $schedule->exam->name,
+                    'scheduleType' => $schedule->type->name
+                ];
+            });
+
+            return json_encode($schedule);
+        }
+    }
+
+    /**
+     * Удаление экзамена из базы
+     * @param int $id Идентификатор экзамена
+     * @return Response
+     */
+    public function actionDelete($id)
+    {
+        Exams::deleteAll(['id' => $id]);
+        return $this->redirect('index');
+    }
+
+    /**
+     * Формирует и отображает расписание
+     * @return string
+     * @throws Exception
+     */
+    public function actionCreateSchedule()
+    {
+        $scheduler = new SchedulerOperation();
+        $scheduler->createSchedule();
+        $schedulePreparing = $scheduler->getSchedulePreparing();
+        $preparingModels = [];
+        foreach ($schedulePreparing as $exam => $schedule) {
+            $preparingModels[] = [
+                'name' => $exam,
+                'datePreparing' => date('d.m.Y', strtotime(key($schedule))),
+            ];
+        }
+
+        $dataProvider = new ArrayDataProvider([
+            'allModels' => $preparingModels,
+            'pagination' => [
+                'pageSize' => 10,
+            ],
+        ]);
+
+        return $this->renderAjax('scheduler/result', [
+            'dataProvider' => $dataProvider
+        ]);
     }
 }

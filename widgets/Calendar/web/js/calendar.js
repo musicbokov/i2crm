@@ -1,16 +1,21 @@
 function initCalendar(schedule)
 {
+    $('#calendar').replaceWith('<div id="calendar"></div>');
     let options = {};
     options.viewRender = function () {
-        console.log('test');
-        $.each(JSON.parse(schedule), function (date, exam) {
-            let cellHtml = '<div class="fc-day-cell">' +
-                '<h6>Экзамен:</h6>' +
-                '<p><b>' + exam + '</b></p>' +
+        $.each(schedule, function (date, exam) {
+            let div = exam.scheduleType === 'Экзамен' ?
+                '<div class="fc-day-cell fc-day-exam">' :
+                '<div class="fc-day-cell">';
+
+            let cellHtml = div +
+                '<h6>' + exam.scheduleType + ':</h6>' +
+                '<p><b>' + exam.examName + '</b></p>' +
                 '</div>'
+
             $('.fc-day[data-date="' + date + '"]').html(cellHtml);
         });
     }
 
-    $('#calendar').fullCalendar({});
+    $('#calendar').fullCalendar(options);
 }

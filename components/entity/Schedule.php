@@ -22,19 +22,13 @@ class Schedule extends ActiveRecord
      * Сформировано
      * @var int
      */
-    const STATUS_DONE = 1;
+    const STATUS_DONE = 'Сформировано';
 
     /**
      * Не сформировано
      * @var int
      */
-    const STATUS_NOT_DONE = 2;
-
-    /**
-     * Отсутствует день подготовки
-     * @var int
-     */
-    const STATUS_CANCEL = 3;
+    const STATUS_NOT_DONE = 'Не сформировано';
 
     /**
      * @return string

@@ -10,15 +10,6 @@ use yii\base\Widget;
  */
 class CalendarWidget extends Widget
 {
-//
-//    /**
-//     * Инициализация виджета
-//     */
-//    public function init()
-//    {
-//        parent::init();
-//    }
-
     /**
      * Рендер виджета
      * @return string

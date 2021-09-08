@@ -21,6 +21,7 @@ class CalendarAsset extends AssetBundle
      */
     public $css = [
         'css/fullcalendar/fullcalendar.css',
+        'css/calendar.css'
     ];
 
     /**
@@ -40,9 +41,4 @@ class CalendarAsset extends AssetBundle
     public $depends = [
         JqueryAsset::class,
     ];
-
-    public function __construct($config = [])
-    {
-        parent::__construct($config);
-    }
 }
