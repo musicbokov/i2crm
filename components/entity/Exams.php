@@ -27,6 +27,7 @@ class Exams extends ActiveRecord
     }
 
     /**
+     * Получить расписания
      * @return ActiveQuery
      */
     public function getSchedule()

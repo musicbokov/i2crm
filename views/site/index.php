@@ -3,11 +3,12 @@
 /**
  * @var $this yii\web\View
  * @var string $title Заголовок страницы
- * @var array $dataProvider
+ * @var ActiveDataProvider $dataProvider Экзамены с расписанием
  */
 
 use app\components\entity\Schedule;
 use app\components\entity\ScheduleTypes;
+use yii\data\ActiveDataProvider;
 use yii\grid\GridView;
 use yii\helpers\ArrayHelper;
 

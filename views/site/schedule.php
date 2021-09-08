@@ -41,3 +41,4 @@ $this->registerJs("var examsSchedule = '" . json_encode($examsSchedule) . "';", 
 </div>
 
 <?php echo CalendarWidget::widget(); ?>
+

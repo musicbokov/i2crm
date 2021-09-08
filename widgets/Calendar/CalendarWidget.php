@@ -6,6 +6,7 @@ use yii\base\Widget;
 
 /**
  * Class CalendarWidget
+ * Виджет "Календарь с расписанием экзаменов и дней подготовки к ним
  * @package app\widgets\Calendar
  */
 class CalendarWidget extends Widget

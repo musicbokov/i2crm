@@ -3,7 +3,6 @@
 namespace app\models;
 
 use app\components\entity\Exams;
-use app\components\entity\ExamsSchedule;
 use app\components\entity\ExceptionsCode;
 use app\components\entity\Schedule;
 use app\components\entity\ScheduleTypes;
@@ -91,7 +90,7 @@ class ExamScheduleModel extends Model
     }
 
     /**
-     * Сохраняет
+     * Сохраняет экзамен и его расписание
      * @throws ScheduleExceptions|Exception
      */
     public function saveExamsWithSchedule()

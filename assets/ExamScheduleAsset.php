@@ -12,11 +12,23 @@ use yii\web\JqueryAsset;
  */
 class ExamScheduleAsset extends AssetBundle
 {
+    /**
+     * @var string
+     */
     public $basePath = '@webroot';
+    /**
+     * @var string
+     */
     public $baseUrl = '@web';
+    /**
+     * @var string[]
+     */
     public $js = [
         'js/exam-schedule.js',
     ];
+    /**
+     * @var string[]
+     */
     public $depends = [
         JqueryAsset::class,
     ];

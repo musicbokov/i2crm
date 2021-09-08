@@ -7,6 +7,7 @@ use yii\web\JqueryAsset;
 
 /**
  * Class CalendarAsset
+ * Подключение внешних файлов для виджета "Календарь с расписанием"
  * @package app\widgets\Calendar\assets
  */
 class CalendarAsset extends AssetBundle

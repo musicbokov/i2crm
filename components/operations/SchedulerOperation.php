@@ -11,10 +11,36 @@ use Exception;
 use Yii;
 use yii\helpers\ArrayHelper;
 
+/**
+ * Class SchedulerOperation
+ * Планировщик
+ * Формирует расписание дней подготовки на основании расписания экзаменов по следующему алгоритму:
+ *  1) Занести день проведения экзамена в массив с недоступными днями
+ *  2) Проверить свободен ли день
+ *  3) Если свободен, то переходим к шагу 6
+ *  4) Если занят, то проверяем, день подготовки ли это
+ *  5) Если день подготовки, то пробуем перенести день подготовки на другой день, чтобы освободить текущий
+ *      (возвращаемся к шагу 2)
+ *  6) Резервируем день в массиве расписания дней подготовки
+ *  7) Удаляем старое расписание с типом Подготовка и сохраняем в таблицу новое
+ * @package app\components\operations
+ */
 class SchedulerOperation extends SchedulerAbstractOperation
 {
+    /**
+     * Недоступные дни
+     * @var array
+     */
     private $forbiddenDays = [];
+    /**
+     * Расписание дней подготовки
+     * @var array
+     */
     private $schedulePreparing = [];
+    /**
+     * Расписание дней проведения экзаменов
+     * @var array
+     */
     private $scheduleExams;
 
     /**
@@ -22,18 +48,26 @@ class SchedulerOperation extends SchedulerAbstractOperation
      */
     public function __construct()
     {
+        // Получаем все дни для проведения экзаменов в формате:
+        // [ "Название экзамена" => ["Дата проведения экзамена" => "Количество дней для подготовки"]]
         $this->scheduleExams = $this->toFormScheduleExams();
     }
 
     /**
+     * Сформировать расписание дней для подготовки
      * @throws Exception
      */
     public function createSchedule()
     {
+        // Из таблицы с расписанием удаляем все дни с типом расписания "Подготовка"
         Schedule::deleteAll(['type_id' => ScheduleTypes::TYPE_PREPARING]);
+        // Для каждого экзамена проводим попытку зарезервировать день для подготовки
         foreach ($this->scheduleExams as $exam => $schedule) {
+            // Интересующий день (день проведения экзамена)
             $interestDay = new DateTime(key($schedule));
+            // Добавляем интересующий день (день проведения экзамена) в массив с недоступными днями
             $this->forbiddenDays[] = $interestDay->format('Y-m-d');
+            // Проводим попытку зарезервировать день для подготовки
             $this->reservePreparingDay($exam, $schedule, $interestDay);
         }
 
@@ -42,7 +76,7 @@ class SchedulerOperation extends SchedulerAbstractOperation
 
     /**
      * Получить расписание подготовки с сортировкой
-     * @var int $sort
+     * @var int $sort Метод сортировки (принимает константу)
      * @return array
      */
     public function getSchedulePreparing($sort = SORT_DESC)
@@ -55,10 +89,11 @@ class SchedulerOperation extends SchedulerAbstractOperation
 
     /**
      * Сформировать массив с расписанием экзаменов и количеством дней для подготовки
-     * @return array
+     * @return array [ string => [date => int] ]
      */
     private function toFormScheduleExams()
     {
+        //Получаем
         $scheduleExams = Schedule::find()->with(['exam'])->where(['type_id' => ScheduleTypes::TYPE_EXAM])->all();
         return ArrayHelper::map($scheduleExams, function (Schedule $schedule) {
             return $schedule->exam->name;
@@ -88,14 +123,16 @@ class SchedulerOperation extends SchedulerAbstractOperation
      * Зарезервировать день подготовки
      * Возвращает true, если удалось зарезервировать
      * @var string $exam Название экзамена
-     * @var array $schedule
-     * @var DateTime|null $interestDay
+     * @var array $schedule Расписание
+     * @var DateTime|null $interestDay Интересующий день
      * @return bool
      * @throws Exception
      */
     private function reservePreparingDay($exam, $schedule, DateTime $interestDay = null)
     {
+        // Если null, то это попытка перенести день подготовки к экзамену
         $interestDay = $interestDay ?? new DateTime(key($schedule));
+        // Ищем ближайшую дату для подготовки к экзамену. Если дата занята, то пробуем освободить этот день
         for ($i = 1; $i <= $schedule[key($schedule)]; $i++) {
             //Если дата свободная, то резервируем на этот день подготовку к экзамену
             if (!in_array($interestDay->modify('-1 days')->format('Y-m-d'), $this->forbiddenDays)) {
