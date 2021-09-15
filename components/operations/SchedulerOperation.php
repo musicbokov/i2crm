@@ -99,7 +99,11 @@ class SchedulerOperation extends SchedulerAbstractOperation
     private function toFormScheduleExams()
     {
         //Получаем
-        $scheduleExams = Schedule::find()->with(['exam'])->where(['type_id' => ScheduleTypes::TYPE_EXAM])->all();
+        $scheduleExams = Schedule::find()
+            ->with(['exam'])
+            ->where(['type_id' => ScheduleTypes::TYPE_EXAM])
+            ->orderBy(['date' => SORT_ASC])
+            ->all();
         return ArrayHelper::map($scheduleExams, function (Schedule $schedule) {
             return $schedule->exam->name;
         }, function (Schedule $schedule) {
@@ -128,7 +132,7 @@ class SchedulerOperation extends SchedulerAbstractOperation
      * Зарезервировать день подготовки
      * Возвращает true, если удалось зарезервировать
      * @var string $exam Название экзамена
-     * @var array $schedule Расписание
+     * @var array $schedule Расписание экзамена
      * @var DateTime|null $interestDay Интересующий день
      * @return bool
      * @throws Exception
@@ -140,12 +144,13 @@ class SchedulerOperation extends SchedulerAbstractOperation
         // Ищем ближайшую дату для подготовки к экзамену. Если дата занята, то пробуем освободить этот день
         for ($i = 1; $i <= $schedule[key($schedule)]; $i++) {
             //Если дата свободная, то резервируем на этот день подготовку к экзамену
-            if (!in_array($interestDay->modify('-1 days')->format('Y-m-d'), $this->forbiddenDays)) {
+            $interestDay->modify('-1 days');
+            if (!in_array($interestDay->format('Y-m-d'), $this->forbiddenDays)) {
                 $this->forbiddenDays[] = $interestDay->format('Y-m-d');
                 $this->schedulePreparing[$exam] = [$interestDay->format('Y-m-d') => $schedule[key($schedule)]];
                 return true;
-                //Если дата занята, то пробуем освободить этот день, чтобы поместить новый
             } else {
+                //Если дата занята, то пробуем освободить этот день, чтобы поместить новый
                 $days = ArrayHelper::getColumn($this->schedulePreparing, $interestDay->format('Y-m-d'));
                 if ($exam !== key($days) && !is_null($days[key($days)])) {
                     //Если в этот день готовимся к другому экзамену, то пробуем перенести день подготовки подальше
