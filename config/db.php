@@ -2,9 +2,9 @@
 
 return [
     'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=localhost;dbname=i2crm_db',
+    'dsn' => 'mysql:host=i2crm-mysql-1;dbname=i2crm_db',
     'username' => 'root',
-    'password' => '',
+    'password' => 'root',
     'charset' => 'utf8',
 
     // Schema cache options (for production environment)

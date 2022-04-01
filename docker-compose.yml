@@ -14,10 +14,10 @@ services:
       - '.:/application'
       - ./gen/docker/mysql:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=jdnHek7!
-      - MYSQL_DATABASE=lk
-      - MYSQL_USER=lumen
-      - MYSQL_PASSWORD=nn9smAsg%
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: i2crm_db
+      MYSQL_USER: yii2
+      MYSQL_PASSWORD: dsdjaky54567
     ports:
       - '27002:3306'
 

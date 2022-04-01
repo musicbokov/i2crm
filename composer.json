@@ -36,6 +36,12 @@
         "process-timeout": 1800,
         "fxp-asset": {
             "enabled": false
+        },
+        "allow-plugins": {
+            "composer/installers": true,
+            "yiisoft/yii2-composer": true,
+            "robloach/component-installer": true,
+            "oomphinc/composer-installers-extender": true
         }
     },
     "scripts": {
